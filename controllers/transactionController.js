@@ -73,13 +73,19 @@ const createTransaction = asyncHandler(async (req, res) => {
     await sender.save();
     await recipient.save();
 
-    const newTransaction = new Transaction({
+    // const newTransaction = new Transaction({
+    //     senderEmail: user.email,
+    //     recipientEmail,
+    //     amount
+    // });
+
+    // await newTransaction.save();
+
+    const newTransaction = await Transaction.create({
         senderEmail: user.email,
         recipientEmail,
         amount
     });
-
-    await newTransaction.save();
 
     res.json({ message: 'Transaction successful', transaction: newTransaction });
 });
