@@ -1,3 +1,4 @@
+// models/User.js
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
@@ -7,7 +8,6 @@ const userSchema = new mongoose.Schema({
         unique: true,
         validate: {
             validator: function (v) {
-                // Regular expression to validate the email format
                 return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
             },
             message: props => `${props.value} is not a valid email address!`
@@ -16,7 +16,8 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: true },
     phoneNumber: { type: String },
     balance: { type: Number, default: 1000 },
-    active: { type: Boolean, default: true }
+    active: { type: Boolean, default: true },
+    roles: { type: [String], default: ['user'] } // New roles field
 });
 
 module.exports = mongoose.model('User', userSchema);

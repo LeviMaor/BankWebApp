@@ -1,7 +1,8 @@
+const asyncHandler = require('express-async-handler');
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
-const asyncHandler = require('express-async-handler');
 
+// Get user profile
 const getProfile = asyncHandler(async (req, res) => {
     const user = req.user;
     if (!user) {
@@ -19,6 +20,7 @@ const getProfile = asyncHandler(async (req, res) => {
     });
 });
 
+// Update user details
 const updateUser = asyncHandler(async (req, res) => {
     const { newPassword } = req.body;
     const user = req.user;
@@ -35,4 +37,38 @@ const updateUser = asyncHandler(async (req, res) => {
     res.json({ message: 'User updated successfully' });
 });
 
-module.exports = { getProfile, updateUser };
+// Get user by ID (admin route)
+const getUser = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const user = await User.findById(id).exec();
+    if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({
+        email: user.email,
+        balance: user.balance,
+        roles: user.roles
+    });
+});
+
+const getAllUsers = asyncHandler(async (req, res) => {
+    const users = await User.find().select('-password').exec();
+    res.status(200).json({ users });
+});
+
+
+// Delete user by ID (admin route)
+const deleteUser = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const user = await User.findByIdAndDelete(id).exec();
+    if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ message: 'User deleted successfully' });
+});
+
+module.exports = { getProfile, updateUser, getUser, getAllUsers, deleteUser };
