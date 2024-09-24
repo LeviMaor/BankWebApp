@@ -10,11 +10,19 @@ const getTransactions = asyncHandler(async (req, res) => {
         $or: [{ senderEmail: user.email }, { recipientEmail: user.email }]
     }).exec();
 
-    if (!transactions) {
+    if (!transactions || transactions.length === 0) {
         return res.status(404).json({ message: 'No transactions found' });
     }
 
-    res.json({ transactions });
+    // Send transactions along with the date
+    const formattedTransactions = transactions.map(transaction => ({
+        senderEmail: transaction.senderEmail,
+        recipientEmail: transaction.recipientEmail,
+        amount: transaction.amount,
+        date: transaction.createdAt // Include the date
+    }));
+
+    res.json({ transactions: formattedTransactions });
 });
 
 // Create a new transaction
@@ -115,3 +123,4 @@ module.exports = {
     withdraw,
     getTransactionsByUserId
 };
+

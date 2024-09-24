@@ -15,15 +15,14 @@ const signup = asyncHandler(async (req, res) => {
 
     const existingUser = await User.findOne({ email }).exec();
     if (existingUser) {
-        return res.status(400).json({ message: 'User already exists' });
+        return res.status(409).json({ message: 'User already exists' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await User.create({
         email,
         password: hashedPassword,
-        balance: 1000,
-        roles: ['User'] // Default role
+        balance: 1000
     });
 
     res.status(201).json({ message: 'User created successfully', userId: newUser._id });
@@ -42,7 +41,7 @@ const signupAdmin = asyncHandler(async (req, res) => {
 
     const existingUser = await User.findOne({ email }).exec();
     if (existingUser) {
-        return res.status(400).json({ message: 'User already exists' });
+        return res.status(409).json({ message: 'User already exists' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -65,7 +64,7 @@ const login = asyncHandler(async (req, res) => {
     }
 
     const accessToken = jwt.sign(
-        { UserInfo: { email: user.email, roles: user.roles } },
+        { UserInfo: { email: user.email, roles: user.roles } }, // Include roles in the token
         process.env.ACCESS_TOKEN_SECRET,
         { expiresIn: '7d' }
     );
@@ -77,7 +76,12 @@ const login = asyncHandler(async (req, res) => {
         maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    res.status(200).json({ message: 'User logged in successfully', userId: user._id, accessToken });
+    res.status(200).json({
+        message: 'User logged in successfully',
+        userId: user._id,
+        accessToken,
+        roles: user.roles 
+    });
 });
 
 const logout = (req, res) => {
@@ -86,3 +90,4 @@ const logout = (req, res) => {
 };
 
 module.exports = { signup, signupAdmin, login, logout };
+

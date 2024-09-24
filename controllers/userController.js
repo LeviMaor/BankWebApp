@@ -13,10 +13,11 @@ const getProfile = asyncHandler(async (req, res) => {
     if (!userData) {
         return res.status(404).json({ message: 'User not found' });
     }
-
+    
     res.json({
         email: userData.email,
-        balance: userData.balance
+        balance: userData.balance,
+        roles: user.roles
     });
 });
 
@@ -72,3 +73,4 @@ const deleteUser = asyncHandler(async (req, res) => {
 });
 
 module.exports = { getProfile, updateUser, getUser, getAllUsers, deleteUser };
+
