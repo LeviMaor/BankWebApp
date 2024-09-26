@@ -12,7 +12,7 @@ const verifyAdmin = require('../middleware/verifyAdmin');
 const verifyUser = require('../middleware/verifyUser');
 
 // User-specific routes
-router.get('/profile', verifyJWT, verifyUser, getProfile);
+router.get('/profile', verifyJWT, getProfile);
 router.patch('/update', verifyJWT, verifyUser, updateUser);
 
 // Admin-specific routes

@@ -48,7 +48,6 @@ const signupAdmin = asyncHandler(async (req, res) => {
     const newUser = await User.create({
         email,
         password: hashedPassword,
-        balance: 1000,
         roles: ['admin']  // Assign admin role
     });
 
@@ -69,12 +68,12 @@ const login = asyncHandler(async (req, res) => {
         { expiresIn: '7d' }
     );
 
-    res.cookie('jwt', accessToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'None',
-        maxAge: 7 * 24 * 60 * 60 * 1000
-    });
+    // res.cookie('jwt', accessToken, {
+    //     httpOnly: true,
+    //     secure: true,
+    //     sameSite: 'None',
+    //     maxAge: 7 * 24 * 60 * 60 * 1000
+    // });
 
     res.status(200).json({
         message: 'User logged in successfully',
