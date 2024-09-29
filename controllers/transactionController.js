@@ -137,7 +137,12 @@ const getTransactionsByUserId = asyncHandler(async (req, res) => {
         date: transaction.createdAt // Include the createdAt field
     }));
 
-    res.json({ email: user.email, balance: user.balance, transactions: formattedTransactions });
+    res.json({
+        email: user.email,
+        balance: user.balance,
+        roles: user.roles, // Include the roles field
+        transactions: formattedTransactions
+    });
 });
 
 
