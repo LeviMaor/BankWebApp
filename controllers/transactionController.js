@@ -38,30 +38,46 @@ const createTransaction = asyncHandler(async (req, res) => {
         return res.status(400).json({ message: 'Amount must be greater than zero' });
     }
 
-    const sender = await User.findOne({ email: user.email }).exec();
-    const recipient = await User.findOne({ email: recipientEmail }).exec();
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    if (!recipient) {
-        return res.status(404).json({ message: 'Recipient not found' });
+    try {
+        const sender = await User.findOne({ email: user.email }).session(session).exec();
+        const recipient = await User.findOne({ email: recipientEmail }).session(session).exec();
+
+        if (!recipient) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(404).json({ message: 'Recipient not found' });
+        }
+
+        if (sender.balance < amount) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(400).json({ message: 'Insufficient balance' });
+        }
+
+        sender.balance -= amount;
+        recipient.balance += amount;
+
+        await sender.save({ session });
+        await recipient.save({ session });
+
+        const newTransaction = await Transaction.create([{
+            senderEmail: user.email,
+            recipientEmail,
+            amount
+        }], { session });
+
+        await session.commitTransaction();
+        session.endSession();
+
+        res.json({ message: 'Transaction successful', transaction: newTransaction });
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        res.status(500).json({ message: 'Transaction failed', error: error.message });
     }
-
-    if (sender.balance < amount) {
-        return res.status(400).json({ message: 'Insufficient balance' });
-    }
-
-    sender.balance -= amount;
-    recipient.balance += amount;
-
-    await sender.save();
-    await recipient.save();
-
-    const newTransaction = await Transaction.create({
-        senderEmail: user.email,
-        recipientEmail,
-        amount
-    });
-
-    res.json({ message: 'Transaction successful', transaction: newTransaction });
 });
 
 // Deposit funds
