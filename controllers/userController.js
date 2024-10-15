@@ -2,7 +2,6 @@ const asyncHandler = require('express-async-handler');
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
 
-// Get user profile
 const getProfile = asyncHandler(async (req, res) => {
     const user = req.user;
     if (!user) {
@@ -21,7 +20,6 @@ const getProfile = asyncHandler(async (req, res) => {
     });
 });
 
-// Update user details
 const updateUser = asyncHandler(async (req, res) => {
     const { newPassword } = req.body;
     const user = req.user;
@@ -38,7 +36,6 @@ const updateUser = asyncHandler(async (req, res) => {
     res.json({ message: 'User updated successfully' });
 });
 
-// Get user by ID (admin route)
 const getUser = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
@@ -60,7 +57,6 @@ const getAllUsers = asyncHandler(async (req, res) => {
 });
 
 
-// Delete user by ID (admin route)
 const deleteUser = asyncHandler(async (req, res) => {
     const { id } = req.params;
 

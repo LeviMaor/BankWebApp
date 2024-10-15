@@ -1,8 +1,8 @@
 const asyncHandler = require('express-async-handler');
 const Transaction = require('../models/Transaction');
 const User = require('../models/User');
+const mongoose = require('mongoose');
 
-// Get all transactions for the logged-in user
 const getTransactions = asyncHandler(async (req, res) => {
     const user = req.user;
 
@@ -14,7 +14,6 @@ const getTransactions = asyncHandler(async (req, res) => {
         return res.status(404).json({ message: 'No transactions found' });
     }
 
-    // Send transactions along with the date
     const formattedTransactions = transactions.map(transaction => ({
         senderEmail: transaction.senderEmail,
         recipientEmail: transaction.recipientEmail,
@@ -25,7 +24,6 @@ const getTransactions = asyncHandler(async (req, res) => {
     res.json({ transactions: formattedTransactions });
 });
 
-// Create a new transaction
 const createTransaction = asyncHandler(async (req, res) => {
     const { recipientEmail, amount } = req.body;
     const user = req.user;
@@ -34,8 +32,10 @@ const createTransaction = asyncHandler(async (req, res) => {
         return res.status(400).json({ message: 'Recipient email and amount are required' });
     }
 
-    if (amount <= 0) {
-        return res.status(400).json({ message: 'Amount must be greater than zero' });
+    const numericAmount = Number(amount);
+
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+        return res.status(400).json({ message: 'Amount must be a valid number greater than zero' });
     }
 
     const session = await mongoose.startSession();
@@ -51,14 +51,14 @@ const createTransaction = asyncHandler(async (req, res) => {
             return res.status(404).json({ message: 'Recipient not found' });
         }
 
-        if (sender.balance < amount) {
+        if (sender.balance < numericAmount) {
             await session.abortTransaction();
             session.endSession();
             return res.status(400).json({ message: 'Insufficient balance' });
         }
 
-        sender.balance -= amount;
-        recipient.balance += amount;
+        sender.balance -= numericAmount;
+        recipient.balance += numericAmount;
 
         await sender.save({ session });
         await recipient.save({ session });
@@ -66,7 +66,7 @@ const createTransaction = asyncHandler(async (req, res) => {
         const newTransaction = await Transaction.create([{
             senderEmail: user.email,
             recipientEmail,
-            amount
+            amount: numericAmount 
         }], { session });
 
         await session.commitTransaction();
@@ -80,47 +80,46 @@ const createTransaction = asyncHandler(async (req, res) => {
     }
 });
 
-// Deposit funds
 const deposit = asyncHandler(async (req, res) => {
     const { amount } = req.body;
     const user = req.user;
 
-    if (amount <= 0) {
-        return res.status(400).json({ message: 'Amount must be greater than zero' });
+    const numericAmount = Number(amount);
+
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+        return res.status(400).json({ message: 'Amount must be a valid number greater than zero' });
     }
 
-    user.balance += amount;
+    user.balance += numericAmount;
     await user.save();
 
     res.json({ message: 'Deposit successful', newBalance: user.balance });
 });
 
-// Withdraw funds
 const withdraw = asyncHandler(async (req, res) => {
     const { amount } = req.body;
     const user = req.user;
 
-    if (amount <= 0 || user.balance < amount) {
+    const numericAmount = Number(amount);
+
+    if (isNaN(numericAmount) || numericAmount <= 0 || user.balance < numericAmount) {
         return res.status(400).json({ message: 'Insufficient balance' });
     }
 
-    user.balance -= amount;
+    user.balance -= numericAmount;
     await user.save();
 
     res.json({ message: 'Withdrawal successful', newBalance: user.balance });
 });
 
-// Get transactions by user ID (admin route)
 const getTransactionsByUserId = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
-    // Find the user by ID
     const user = await User.findById(id).exec();
     if (!user) {
         return res.status(404).json({ message: 'User not found' });
     }
 
-    // Retrieve transactions for the specified user
     const transactions = await Transaction.find({
         $or: [{ senderEmail: user.email }, { recipientEmail: user.email }]
     }).exec();
@@ -129,22 +128,20 @@ const getTransactionsByUserId = asyncHandler(async (req, res) => {
         return res.status(404).json({ message: 'No transactions found for this user' });
     }
 
-    // Send transactions along with the date
     const formattedTransactions = transactions.map(transaction => ({
         senderEmail: transaction.senderEmail,
         recipientEmail: transaction.recipientEmail,
         amount: transaction.amount,
-        date: transaction.createdAt // Include the createdAt field
+        date: transaction.createdAt 
     }));
 
     res.json({
         email: user.email,
         balance: user.balance,
-        roles: user.roles, // Include the roles field
+        roles: user.roles, 
         transactions: formattedTransactions
     });
 });
-
 
 module.exports = {
     getTransactions,
@@ -153,4 +150,3 @@ module.exports = {
     withdraw,
     getTransactionsByUserId
 };
-

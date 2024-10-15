@@ -3,20 +3,22 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const asyncHandler = require('express-async-handler');
 
-// Get the admin key from environment variables
 const SECRET_ADMIN_KEY = process.env.ADMIN_TOKEN_SECRET;
 
 const signup = asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
+    const { password } = req.body;
+    let { email } = req.body;
 
     if (!email || !password) {
         return res.status(400).json({ message: 'All fields are required' });
     }
 
+    email = email.toLowerCase();
     const existingUser = await User.findOne({ email }).exec();
     if (existingUser) {
         return res.status(409).json({ message: 'User already exists' });
     }
+
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await User.create({
@@ -29,7 +31,33 @@ const signup = asyncHandler(async (req, res) => {
 });
 
 const signupAdmin = asyncHandler(async (req, res) => {
-    const { email, password, key } = req.body;
+    const { password } = req.body;
+    let { email } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    email = email.toLowerCase();
+    const existingUser = await User.findOne({ email }).exec();
+    if (existingUser) {
+        return res.status(409).json({ message: 'User already exists' });
+    }
+
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = await User.create({
+        email,
+        password: hashedPassword,
+        roles: ['admin']
+    });
+
+    res.status(201).json({ message: 'Admin created successfully', userId: newUser._id });
+});
+
+const signupAdminWithKey = asyncHandler(async (req, res) => {
+    const { password } = req.body;
+    let { email } = req.body;
 
     if (!email || !password || !key) {
         return res.status(400).json({ message: 'All fields are required' });
@@ -39,6 +67,7 @@ const signupAdmin = asyncHandler(async (req, res) => {
         return res.status(403).json({ message: 'Invalid admin key' });
     }
 
+    email = email.toLowerCase();
     const existingUser = await User.findOne({ email }).exec();
     if (existingUser) {
         return res.status(409).json({ message: 'User already exists' });
@@ -48,22 +77,24 @@ const signupAdmin = asyncHandler(async (req, res) => {
     const newUser = await User.create({
         email,
         password: hashedPassword,
-        roles: ['admin']  // Assign admin role
+        roles: ['admin']
     });
 
     res.status(201).json({ message: 'Admin created successfully', userId: newUser._id });
 });
 
 const login = asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
+    const { password } = req.body;
+    let { email } = req.body;
 
+    email = email.toLowerCase();
     const user = await User.findOne({ email }).exec();
     if (!user || !(await bcrypt.compare(password, user.password))) {
         return res.status(401).json({ message: 'Unauthorized' });
     }
 
     const accessToken = jwt.sign(
-        { UserInfo: { email: user.email, roles: user.roles } }, // Include roles in the token
+        { UserInfo: { email: user.email, roles: user.roles } },
         process.env.ACCESS_TOKEN_SECRET,
         { expiresIn: '7d' }
     );
@@ -79,7 +110,7 @@ const login = asyncHandler(async (req, res) => {
         message: 'User logged in successfully',
         userId: user._id,
         accessToken,
-        roles: user.roles 
+        roles: user.roles
     });
 });
 
@@ -88,5 +119,5 @@ const logout = (req, res) => {
     res.json({ message: 'Logged out' });
 };
 
-module.exports = { signup, signupAdmin, login, logout };
+module.exports = { signup, signupAdmin, signupAdminWithKey, login, logout };
 
