@@ -7,17 +7,17 @@ const {
     withdraw,
     getTransactionsByUserId
 } = require('../controllers/transactionController');
-const verifyJWT = require('../middleware/verifyJWT');
+
 const verifyAdmin = require('../middleware/verifyAdmin');
 const verifyUser = require('../middleware/verifyUser');
 
 // User-specific routes
-router.get('/', verifyJWT, verifyUser, getTransactions);
-router.post('/new', verifyJWT, verifyUser, createTransaction);
-router.post('/deposit', verifyJWT, deposit);
-router.post('/withdraw', verifyJWT, withdraw);
+router.get('/', verifyUser, getTransactions);
+router.post('/new', verifyUser, createTransaction);
+router.post('/deposit', deposit);
+router.post('/withdraw', withdraw);
 
 // Admin-specific route
-router.get('/user/:id', verifyJWT, verifyAdmin, getTransactionsByUserId);
+router.get('/user/:id', verifyAdmin, getTransactionsByUserId);
 
 module.exports = router;

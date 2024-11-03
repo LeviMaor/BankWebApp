@@ -7,17 +7,17 @@ const {
     getAllUsers,
     deleteUser
 } = require('../controllers/userController');
-const verifyJWT = require('../middleware/verifyJWT');
 const verifyAdmin = require('../middleware/verifyAdmin');
 const verifyUser = require('../middleware/verifyUser');
 
+router.get('/profile', getProfile);
+
 // User-specific routes
-router.get('/profile', verifyJWT, getProfile);
-router.patch('/update', verifyJWT, verifyUser, updateUser);
+router.patch('/update', verifyUser, updateUser);
 
 // Admin-specific routes
-router.get('/all', verifyJWT,verifyAdmin, getAllUsers);
-router.get('/:id', verifyJWT, verifyAdmin, getUser);
-router.delete('/:id', verifyJWT, verifyAdmin, deleteUser);
+router.get('/all', verifyAdmin, getAllUsers);
+router.get('/:id', verifyAdmin, getUser);
+router.delete('/:id', verifyAdmin, deleteUser);
 
 module.exports = router;
